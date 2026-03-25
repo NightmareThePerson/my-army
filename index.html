@@ -1,12 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MY-ARMY Project</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MY-ARMY</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f2f2f2;
+    --border: #000000;
+    --border-light: #cccccc;
+    --text: #000000;
+    --text2: #666666;
+    --btn-bg: #000000;
+    --btn-text: #ffffff;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Archivo', sans-serif; min-height: 100vh; }
+
+  header {
+    border-bottom: 2px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; justify-content: flex-end;
+    height: 60px; position: sticky; top: 0; background: var(--bg); z-index: 100;
+  }
+  .logo { font-family: 'Archivo Black', sans-serif; font-size: 1.4rem; letter-spacing: 0.06em; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 7px; height: 7px; background: var(--text); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.6)} }
+
+  #refresh-btn {
+    background: none; border: 1.5px solid var(--border); color: var(--text);
+    font-family: 'Archivo Black', sans-serif; font-size: 10px; padding: 6px 14px;
+    border-radius: 3px; cursor: pointer; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: background 0.15s, color 0.15s;
+  }
+  #refresh-btn:hover { background: var(--btn-bg); color: var(--btn-text); }
+
+  #channel-hero {
+    background: var(--bg2); border-bottom: 2px solid var(--border);
+    padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  }
+  #channel-thumb { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--border); object-fit: cover; background: var(--bg2); }
+  .channel-info h2 { font-family: 'Archivo Black', sans-serif; font-size: 1.4rem; line-height: 1; }
+  .channel-info p { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .stats-row { display: flex; gap: 2rem; margin-left: auto; flex-wrap: wrap; }
+  .stat { text-align: right; }
+  .stat-num { font-family: 'Archivo Black', sans-serif; font-size: 2rem; line-height: 1; }
+  .stat-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2); margin-top: 2px; }
+
+  #toolbar {
+    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border-light); flex-wrap: wrap;
+  }
+  #search-input {
+    background: var(--bg); border: 1.5px solid var(--border); color: var(--text);
+    font-family: 'Archivo', sans-serif; font-size: 13px; padding: 7px 12px;
+    border-radius: 3px; outline: none; width: 200px;
+  }
+  #search-input::placeholder { color: var(--text2); opacity: 0.5; }
+  .toolbar-label { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; margin-left: auto; }
+
+  #army-section { padding: 1.5rem 2rem 4rem; }
+  #army-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+
+  .soldier {
+    background: var(--bg); border: 1.5px solid var(--border); border-radius: 4px;
+    padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 7px;
+    cursor: pointer; transition: background 0.12s, color 0.12s; animation: fadeIn 0.25s ease both;
+    text-decoration: none; color: var(--text);
+  }
+  .soldier:hover { background: var(--btn-bg); color: var(--btn-text); }
+  .soldier:hover .soldier-avatar { border-color: var(--btn-text); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  .soldier-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border); flex-shrink: 0; background: var(--bg2); }
+  .soldier-name { font-size: 11px; text-align: center; word-break: break-word; line-height: 1.3; }
+
+  .count-tile {
+    grid-column: 1/-1; border: 1.5px solid var(--border); border-radius: 4px;
+    padding: 4rem 2rem; text-align: center;
+  }
+  .big-num { font-family: 'Archivo Black', sans-serif; font-size: 6rem; line-height: 1; letter-spacing: -0.03em; }
+  .big-label { font-size: 11px; color: var(--text2); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 8px; }
+  .big-note { font-size: 12px; color: var(--text2); margin-top: 1rem; line-height: 1.7; max-width: 320px; margin-left: auto; margin-right: auto; }
+
+  #loading { padding: 4rem 2rem; text-align: center; font-size: 11px; color: var(--text2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .spinner { width: 22px; height: 22px; border: 2px solid var(--border-light); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  #empty-msg { display: none; padding: 3rem 2rem; text-align: center; font-size: 12px; color: var(--text2); }
+
+  footer { border-top: 1px solid var(--border-light); padding: 1rem 2rem; font-size: 11px; color: var(--text2); letter-spacing: 0.05em; text-align: center; }
+</style>
 </head>
 <body>
-    <h1>Welcome to MY-ARMY Project</h1>
-    <p>This is your initial setup for the MY-ARMY project.</p>
+
+<header>
+  <button id="refresh-btn" onclick="init()">↻ Refresh</button>
+</header>
+
+<div id="channel-hero">
+  <img id="channel-thumb" src="" alt="" />
+  <div class="channel-info">
+    <h2 id="channel-name">NightmareThePerson</h2>
+    <p>@NightmareThePerson</p>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num" id="stat-subs">—</div><div class="stat-label">Subscribers</div></div>
+  </div>
+</div>
+
+<div id="toolbar">
+  <input id="search-input" type="text" placeholder="Search soldiers..." oninput="filterGrid()" />
+  <span class="toolbar-label" id="showing-label"></span>
+</div>
+
+<div id="army-section">
+  <div id="loading"><div class="spinner"></div>Assembling your army...</div>
+  <div id="empty-msg">No soldiers match your search.</div>
+  <div id="army-grid"></div>
+</div>
+
+
+
+<script>
+const HANDLE = 'NightmareThePerson';
+const API_KEY = 'PASTE_YOUR_KEY_HERE';
+
+let channelId = '';
+let allSoldiers = [];
+
+function $(id){ return document.getElementById(id); }
+
+function fmt(n){
+  if(!n) return '0';
+  n = parseInt(n);
+  if(n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(n >= 1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return n.toLocaleString();
+}
+
+async function init(){
+  $('loading').style.display = 'block';
+  $('army-grid').innerHTML = '';
+  $('empty-msg').style.display = 'none';
+
+  try {
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${HANDLE}&key=${API_KEY}`);
+    const d = await r.json();
+    if(d.error) throw new Error(d.error.message);
+    if(!d.items?.length) throw new Error('Channel not found.');
+
+    const ch = d.items[0];
+    channelId = ch.id;
+    $('channel-thumb').src = ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || '';
+    $('channel-name').textContent = ch.snippet.title;
+    $('stat-subs').textContent = fmt(ch.statistics.subscriberCount);
+    $('stat-videos').textContent = fmt(ch.statistics.videoCount);
+
+    await loadSubscribers();
+  } catch(e){
+    $('loading').innerHTML = `<p style="font-size:12px;color:var(--text2);">${e.message}</p>`;
+  }
+}
+
+async function loadSubscribers(){
+  allSoldiers = [];
+  try {
+    let pageToken = '';
+    let page = 0;
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/subscriptions?part=subscriberSnippet&mySubscribers=true&maxResults=100${pageToken?'&pageToken='+pageToken:''}&key=${API_KEY}`;
+      const r = await fetch(url);
+      const d = await r.json();
+      if(d.error){
+        if(d.error.code === 401 || d.error.code === 403){ showCountOnly(); return; }
+        throw new Error(d.error.message);
+      }
+      for(const item of (d.items||[])){
+        const s = item.subscriberSnippet;
+        allSoldiers.push({ name: s.title, thumb: s.thumbnails?.default?.url||'', channelId: s.channelId });
+      }
+      pageToken = d.nextPageToken || '';
+      page++;
+    } while(pageToken && page < 10);
+
+    $('stat-public').textContent = fmt(allSoldiers.length);
+    renderGrid(allSoldiers);
+  } catch(e){
+    $('loading').innerHTML = `<p style="font-size:12px;color:var(--text2);">${e.message}</p>`;
+    return;
+  }
+  $('loading').style.display = 'none';
+}
+
+function showCountOnly(){
+  $('stat-public').textContent = '—';
+  $('loading').style.display = 'none';
+  $('army-grid').innerHTML = `<div class="count-tile">
+    <div class="big-num">${$('stat-subs').textContent}</div>
+    <div class="big-label">Subscribers</div>
+    <p class="big-note">Individual subscriber tiles require OAuth 2.0.<br>Add OAuth credentials to see each soldier's square.</p>
+  </div>`;
+  $('showing-label').textContent = '';
+}
+
+function renderGrid(soldiers){
+  const grid = $('army-grid');
+  grid.innerHTML = '';
+  if(!soldiers.length){ $('empty-msg').style.display='block'; $('showing-label').textContent=''; return; }
+  $('empty-msg').style.display = 'none';
+  $('showing-label').textContent = `${soldiers.length.toLocaleString()} soldier${soldiers.length!==1?'s':''}`;
+  soldiers.forEach((s, i) => {
+    const a = document.createElement('a');
+    a.className = 'soldier';
+    a.href = `https://youtube.com/channel/${s.channelId}`;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.style.animationDelay = Math.min(i*18, 500)+'ms';
+    a.innerHTML = `<img class="soldier-avatar" src="${s.thumb}" alt="${s.name}" onerror="this.style.display='none'" /><span class="soldier-name">${s.name}</span>`;
+    grid.appendChild(a);
+  });
+}
+
+function filterGrid(){
+  const q = $('search-input').value.trim().toLowerCase();
+  renderGrid(q ? allSoldiers.filter(s=>s.name.toLowerCase().includes(q)) : allSoldiers);
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
