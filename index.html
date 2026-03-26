@@ -61,7 +61,6 @@
   .toolbar-label { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; margin-left: auto; }
   .timing-label { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; font-family: 'Archivo Black', sans-serif; }
 
-  #army-section { padding: 1.5rem 2rem 4rem; }
   #army-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
 
   .soldier {
@@ -90,6 +89,23 @@
 
   #empty-msg { display: none; padding: 3rem 2rem; text-align: center; font-size: 12px; color: var(--text2); }
 
+  /* INSTRUCTIONS */
+  #instructions {
+    border-bottom: 2px solid var(--border);
+    padding: 2rem;
+    background: var(--bg2);
+  }
+  #instructions h3 { font-family: 'Archivo Black', sans-serif; font-size: 1rem; letter-spacing: 0.04em; margin-bottom: 1rem; }
+  .steps { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .step { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 180px; }
+  .step-num { font-family: 'Archivo Black', sans-serif; font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+  .step-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .step-text strong { color: var(--text); font-family: 'Archivo Black', sans-serif; font-weight: normal; }
+
+  /* CANVAS + GRID WRAPPER */
+  #grid-wrap { position: relative; }
+  #lines-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
   footer { border-top: 1px solid var(--border-light); padding: 1rem 2rem; font-size: 11px; color: var(--text2); letter-spacing: 0.05em; text-align: center; }
 </style>
 </head>
@@ -108,16 +124,31 @@
   </div>
 </div>
 
-<div id="toolbar">
-  <input id="search-input" type="text" placeholder="Search soldiers..." oninput="filterGrid()" />
-  <span class="toolbar-label" id="showing-label"></span>
-  <span class="timing-label" id="timing-label"></span>
+<div id="instructions">
+  <h3>HOW TO APPEAR ON THIS PAGE</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-text">Go to <strong>youtube.com</strong> and sign in to your account.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Click your profile picture → <strong>Your channel</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Click <strong>Customize channel</strong> → go to the <strong>Privacy</strong> tab.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Turn <strong>OFF</strong> "Keep all my subscriptions private".</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">Save. You'll appear here within <strong>75 seconds</strong>.</div></div>
+  </div>
 </div>
 
 <div id="army-section">
-  <div id="loading"><div class="spinner"></div>Assembling your army...</div>
-  <div id="empty-msg">No soldiers match your search.</div>
-  <div id="army-grid"></div>
+  <div id="toolbar">
+    <input id="search-input" type="text" placeholder="Search soldiers..." oninput="filterGrid()" />
+    <span class="toolbar-label" id="showing-label"></span>
+    <span class="timing-label" id="timing-label"></span>
+  </div>
+  <div style="padding: 1.5rem 2rem 4rem;">
+    <div id="loading"><div class="spinner"></div>Assembling your army...</div>
+    <div id="empty-msg">No soldiers match your search.</div>
+    <div id="grid-wrap">
+      <canvas id="lines-canvas"></canvas>
+      <div id="army-grid"></div>
+    </div>
+  </div>
 </div>
 
 
@@ -193,17 +224,38 @@ async function loadSubscribers(){
 
 function showCountOnly(){
   $('loading').style.display = 'none';
-  $('army-grid').innerHTML = `<div class="count-tile">
-    <div class="big-num">${$('stat-subs').textContent}</div>
-    <div class="big-label">Subscribers</div>
-    <p class="big-note">Individual subscriber tiles require OAuth 2.0.<br>Add OAuth credentials to see each soldier's square.</p>
-  </div>`;
   $('showing-label').textContent = '';
+}
+
+function drawLines(){
+  const canvas = $('lines-canvas');
+  const wrap = $('grid-wrap');
+  const tiles = wrap.querySelectorAll('.soldier');
+  if(tiles.length < 2){ canvas.style.display='none'; return; }
+  canvas.style.display = 'block';
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#cccccc';
+  ctx.lineWidth = 1;
+  const centers = Array.from(tiles).map(t => {
+    const r = t.getBoundingClientRect();
+    const wr = wrap.getBoundingClientRect();
+    return { x: r.left - wr.left + r.width/2, y: r.top - wr.top + r.height/2 };
+  });
+  for(let i=1; i<centers.length; i++){
+    ctx.beginPath();
+    ctx.moveTo(centers[i-1].x, centers[i-1].y);
+    ctx.lineTo(centers[i].x, centers[i].y);
+    ctx.stroke();
+  }
 }
 
 function renderGrid(soldiers){
   const grid = $('army-grid');
   grid.innerHTML = '';
+  $('lines-canvas').style.display = 'none';
   if(!soldiers.length){ $('empty-msg').style.display='block'; $('showing-label').textContent=''; return; }
   $('empty-msg').style.display = 'none';
   $('showing-label').textContent = `${soldiers.length.toLocaleString()} soldier${soldiers.length!==1?'s':''}`;
@@ -216,7 +268,10 @@ function renderGrid(soldiers){
     a.innerHTML = `<img class="soldier-avatar" src="${s.thumb}" alt="${s.name}" onerror="this.style.display='none'" /><span class="soldier-name">${s.name}</span>`;
     grid.appendChild(a);
   });
+  setTimeout(drawLines, 400);
 }
+
+window.addEventListener('resize', drawLines);
 
 function filterGrid(){
   const q = $('search-input').value.trim().toLowerCase();
