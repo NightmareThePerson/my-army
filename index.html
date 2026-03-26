@@ -59,6 +59,7 @@
   }
   #search-input::placeholder { color: var(--text2); opacity: 0.5; }
   .toolbar-label { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; margin-left: auto; }
+  .timing-label { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; font-family: 'Archivo Black', sans-serif; }
 
   #army-section { padding: 1.5rem 2rem 4rem; }
   #army-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
@@ -94,9 +95,7 @@
 </head>
 <body>
 
-<header>
-  <button id="refresh-btn" onclick="init()">↻ Refresh</button>
-</header>
+
 
 <div id="channel-hero">
   <img id="channel-thumb" src="" alt="" />
@@ -112,6 +111,7 @@
 <div id="toolbar">
   <input id="search-input" type="text" placeholder="Search soldiers..." oninput="filterGrid()" />
   <span class="toolbar-label" id="showing-label"></span>
+  <span class="timing-label" id="timing-label"></span>
 </div>
 
 <div id="army-section">
@@ -124,7 +124,7 @@
 
 <script>
 const HANDLE = 'NightmareThePerson';
-const API_KEY = 'PASTE_YOUR_KEY_HERE';
+const API_KEY = 'AIzaSyCvt0-3EMxtGE9xw2_FZi0fAgopo2aR93E';
 
 let channelId = '';
 let allSoldiers = [];
@@ -226,7 +226,40 @@ function filterGrid(){
   renderGrid(q ? allSoldiers.filter(s=>s.name.toLowerCase().includes(q)) : allSoldiers);
 }
 
-window.addEventListener('DOMContentLoaded', init);
+// PT-synced 75s schedule (mirrors Python script: midnight PT + i*75s)
+function getPTSeconds(){
+  const now = new Date();
+  const pt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  return pt.getHours()*3600 + pt.getMinutes()*60 + pt.getSeconds();
+}
+
+function getScheduleInfo(){
+  const secs = getPTSeconds();
+  const sinceLast = secs % 75;
+  const tillNext = 75 - sinceLast;
+  return { sinceLast, tillNext };
+}
+
+function updateTiming(){
+  const { sinceLast, tillNext } = getScheduleInfo();
+  $('timing-label').textContent = `updated ${sinceLast}s ago · next in ${tillNext}s`;
+}
+
+function scheduleNextRefresh(){
+  const { tillNext } = getScheduleInfo();
+  setTimeout(() => {
+    init();
+    updateTiming();
+    setInterval(() => { init(); updateTiming(); }, 75000);
+  }, tillNext * 1000);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  updateTiming();
+  setInterval(updateTiming, 1000);
+  scheduleNextRefresh();
+});
 </script>
 </body>
 </html>
