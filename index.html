@@ -155,7 +155,6 @@ async function init(){
     $('channel-thumb').src = ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || '';
     $('channel-name').textContent = ch.snippet.title;
     $('stat-subs').textContent = fmt(ch.statistics.subscriberCount);
-    $('stat-videos').textContent = fmt(ch.statistics.videoCount);
 
     await loadSubscribers();
   } catch(e){
@@ -184,7 +183,6 @@ async function loadSubscribers(){
       page++;
     } while(pageToken && page < 10);
 
-    $('stat-public').textContent = fmt(allSoldiers.length);
     renderGrid(allSoldiers);
   } catch(e){
     $('loading').innerHTML = `<p style="font-size:12px;color:var(--text2);">${e.message}</p>`;
@@ -194,7 +192,6 @@ async function loadSubscribers(){
 }
 
 function showCountOnly(){
-  $('stat-public').textContent = '—';
   $('loading').style.display = 'none';
   $('army-grid').innerHTML = `<div class="count-tile">
     <div class="big-num">${$('stat-subs').textContent}</div>
