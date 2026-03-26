@@ -199,16 +199,15 @@ async function loadSubscribers(){
     let pageToken = '';
     let page = 0;
     do {
-      const url = `https://www.googleapis.com/youtube/v3/subscriptions?part=subscriberSnippet&mySubscribers=true&maxResults=100${pageToken?'&pageToken='+pageToken:''}&key=${API_KEY}`;
+      const url = `https://www.googleapis.com/youtube/v3/subscriptions?part=subscriberSnippet&mySubscribers=true&channelId=${channelId}&maxResults=100${pageToken?'&pageToken='+pageToken:''}&key=${API_KEY}`;
       const r = await fetch(url);
       const d = await r.json();
       if(d.error){
-        if(d.error.code === 401 || d.error.code === 403){ showCountOnly(); return; }
-        throw new Error(d.error.message);
+        showCountOnly(); return;
       }
       for(const item of (d.items||[])){
         const s = item.subscriberSnippet;
-        allSoldiers.push({ name: s.title, thumb: s.thumbnails?.default?.url||'', channelId: s.channelId });
+        if(s && s.title) allSoldiers.push({ name: s.title, thumb: s.thumbnails?.default?.url||'', channelId: s.channelId });
       }
       pageToken = d.nextPageToken || '';
       page++;
